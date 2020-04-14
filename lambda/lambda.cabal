@@ -1,0 +1,61 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: a8395700adf636e269bccc8a2cf478e7d8cfef0ff8f191d56009ddfdca2ecf9c
+
+name:           lambda
+version:        0.1.0.0
+description:    Senior Initative
+author:         Raffa Levy
+maintainer:     Raffa Levy
+copyright:      2020 Raffa Levy
+license:        AllRightsReserved
+build-type:     Simple
+extra-source-files:
+    README.md
+
+library
+  exposed-modules:
+      Lib
+      Untyped
+  other-modules:
+      Paths_lambda
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.7 && <5
+    , lens
+    , transformers
+  default-language: Haskell2010
+
+executable lambda-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_lambda
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , lambda
+    , lens
+    , transformers
+  default-language: Haskell2010
+
+test-suite lambda-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_lambda
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , lambda
+    , lens
+    , transformers
+  default-language: Haskell2010
