@@ -89,4 +89,4 @@ reduce_n 0 expr = Nothing
 reduce_n n expr = (beta expr >>= reduce_n (n-1)) <|> return expr
 
 test :: IO ()
-test = putStrLn $ displayExpr $ dbToExpr $ exprToDB $ succE
+test = putStrLn $ displayExpr $ dbToExpr $ reduce $ exprToDB $ App succE zeroE

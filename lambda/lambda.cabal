@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a8395700adf636e269bccc8a2cf478e7d8cfef0ff8f191d56009ddfdca2ecf9c
+-- hash: c36b26f84adecdbbd5588225a0507f4f60139af908ee8c4f63a5a5382118b599
 
 name:           lambda
 version:        0.1.0.0
@@ -20,6 +20,7 @@ extra-source-files:
 library
   exposed-modules:
       Lib
+      STLC
       Untyped
   other-modules:
       Paths_lambda
