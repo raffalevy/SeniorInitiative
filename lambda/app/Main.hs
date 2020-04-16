@@ -2,7 +2,8 @@ module Main where
 
 import Lib
 import Untyped
-import STLC
+import STLCSimple
+import STLCInference
 
 main :: IO ()
-main = stlcTest
+main = infrTest

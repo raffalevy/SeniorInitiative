@@ -1,4 +1,6 @@
-module STLC where
+module STLCSimple (
+    Name, Expr(..), Type(..),
+    check, stlcTest) where
 
 import Lib
 
@@ -19,12 +21,6 @@ data Type =
     O | Arrow Type Type deriving (Show, Eq)
 
 type Ctx = [(Name, Type)]
-
--- check :: Expr -> Maybe Type
--- check 
-
--- findInCtx :: (Monad m) => Name -> Ctx -> MaybeT m Type
--- findInCtx x ctx = MaybeT $ return $ fmap snd $ find (\(y, t) -> x==y) ctx
 
 findInCtx :: Name -> Ctx -> Maybe Type
 findInCtx x = fmap snd . find (\(y, t) -> x==y)
