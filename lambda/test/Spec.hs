@@ -5,7 +5,7 @@ import qualified HindleyMilner as HM
 import HindleyMilner (pattern (:->), pattern (:$))
 
 main :: IO ()
-main = putStrLn "" >> hmTest
+main = putStrLn "" >> parseTest
 
 parseTest :: IO ()
 parseTest = do

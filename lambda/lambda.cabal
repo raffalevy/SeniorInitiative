@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: eff7cb68e4b28b3dadf7c3dbc8ca2627ae3422afe55517d253821a5437d937f9
+-- hash: be2562043f39eaca44db5042a4237a708dc4797632de20ca05f2c9687f0c49ab
 
 name:           lambda
 version:        0.1.0.0
@@ -21,7 +21,10 @@ library
   exposed-modules:
       HindleyMilner
       Lib
+      Parsers.Combinators
+      Parsers.HMParser
       Parsers.LambdaParser
+      REPL
       STLCInference
       STLCSimple
       Untyped

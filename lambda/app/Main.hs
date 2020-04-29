@@ -1,9 +1,7 @@
 module Main where
 
 import Lib
-import Untyped
-import STLCSimple
-import STLCInference
+import REPL
 
 main :: IO ()
-main = infrTest
+main = hmRepl

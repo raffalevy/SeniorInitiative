@@ -95,7 +95,7 @@ genConstraints e ctx = go e ctx 0 <&> (\(a,b,c) -> (a,b)) where
     go (Var x) ctx uid = fromMaybe (Left $ UnboundVariable x) $ do
         pt <- lookup x ctx
         let (mt, uid') = instantiate pt uid
-        return (Right (mt, [], uid))
+        return (Right (mt, [], uid'))
     go (App e1 e2) ctx uid = do
         (t1, c1, uid) <- go e1 ctx uid
         let c = c1
