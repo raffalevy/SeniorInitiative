@@ -24,3 +24,7 @@ newUID = 0
 
 genUID :: (Monad m) => UIDT m UID
 genUID = get <* modify (+1)
+
+fmapl :: (a -> b) -> Either a c -> Either b c
+fmapl f (Left x) = Left $ f x
+fmapl _ (Right x) = Right x

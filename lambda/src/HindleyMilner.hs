@@ -13,6 +13,8 @@ import Data.Maybe
 import Data.List
 import Text.Show
 
+import Debug.Trace
+
 type Name = String
 
 -- | An expression; carries no type information
@@ -71,7 +73,9 @@ type Context = [(Name, Type)]
 
 type Constraint = (MonoType, MonoType)
 
-newtype GCError = UnboundVariable Name
+data GCError =
+    UnboundVariable Name
+    | ErrInLet TypeError
     deriving (Show)
 
 type GCResult r = Either GCError r
@@ -81,42 +85,52 @@ substVarMono x y (TVar a) = if a == x then TVar y else TVar a
 substVarMono x y (t1 :-> t2) = substVarMono x y t1 :-> substVarMono x y t2
 substVarMono x y (TApp f ts) = TApp f $ substVarMono x y <$> ts
 
-substVar :: UID -> UID -> Type -> Type
-substVar x y (Mono t) = Mono $ substVarMono x y t
-substVar x y (Forall a t) = Forall a $ if a == x then t else substVar x y t
+substVar :: UID -> UID -> Type -> UID -> (Type, UID)
+substVar x y (Mono t) uid = (Mono (substVarMono x y t), uid)
+substVar x y (Forall a t) uid = if a == x then (Forall a t, uid) else
+    let (t', uid') = substVar a uid t (uid+1)
+        (t'', uid'') = substVar x y t' uid' in
+    (Forall uid t'', uid'')
 
 instantiate :: Type -> UID -> (MonoType, UID)
 instantiate (Mono t) uid = (t, uid)
-instantiate (Forall a t) uid = instantiate (substVar a uid t) (uid + 1)
+instantiate (Forall a t) uid =
+    let (t', uid') = substVar a uid t (uid+1) in
+    instantiate t' uid'
+
+tr s x = trace (concat ["{", s, ": ", show x, "}"]) x
 
 genConstraints :: Expr -> Context -> GCResult (MonoType, [Constraint])
-genConstraints e ctx = go e ctx 0 <&> (\(a,b,c) -> (a,b)) where
-    go :: Expr -> Context -> UID -> GCResult (MonoType, [Constraint], UID)
-    go (Var x) ctx uid = fromMaybe (Left $ UnboundVariable x) $ do
-        pt <- lookup x ctx
-        let (mt, uid') = instantiate pt uid
-        return (Right (mt, [], uid'))
-    go (App e1 e2) ctx uid = do
-        (t1, c1, uid) <- go e1 ctx uid
-        let c = c1
+genConstraints e ctx = genConstraintsAtUID e ctx 0 <&> (\(a,b,c) -> (a,b))
 
-        (t2, c2, uid) <- go e2 ctx uid
-        let c' = c2 ++ c
+genConstraintsAtUID :: Expr -> Context -> UID -> GCResult (MonoType, [Constraint], UID)
+genConstraintsAtUID (Var x) ctx uid = fromMaybe (Left $ UnboundVariable x) $ do
+    pt <- lookup x ctx
+    let (mt, uid') = instantiate pt uid
+    return (Right (mt, [], uid'))
+genConstraintsAtUID (App e1 e2) ctx uid = do
+    (t1, c1, uid) <- genConstraintsAtUID e1 ctx uid
+    let c = c1
 
-        let x = TVar uid
-        let uid' = uid + 1
-        let c'' = (t1, t2 :-> x):c'
+    (t2, c2, uid) <- genConstraintsAtUID e2 ctx uid
+    let c' = c2 ++ c
 
-        return (x, c'', uid')
-    go (Lam x expr) ctx uid = do
-        let tx = TVar uid
-        let uid' = uid + 1
-        (te, ce, uid') <- go expr ((x, Mono tx):ctx) uid'
-        return $ (tx :-> te, ce, uid')
-    go (Let x e1 e2) ctx uid = do
-        (t1, c1, uid) <- go e1 ctx uid
-        (t2, c2, uid) <- go e2 ((x, Mono t1):ctx) uid
-        return (t2, c2 ++ c1, uid)
+    let x = TVar uid
+    let uid' = uid + 1
+    let c'' = (t1, t2 :-> x):c'
+
+    return (x, c'', uid')
+genConstraintsAtUID (Lam x expr) ctx uid = do
+    let tx = TVar uid
+    let uid' = uid + 1
+    (te, ce, uid') <- genConstraintsAtUID expr ((x, Mono tx):ctx) uid'
+    return $ (tx :-> te, ce, uid')
+genConstraintsAtUID (Let x e1 e2) ctx uid = do
+    (t1, c1, uid) <- fmapl ErrInLet $ inferAtUIDRetConstraints e1 ctx uid
+    -- (t1, c1, uid) <- genConstraintsAtUID e1 ctx uid
+    (t2, c2, uid) <- genConstraintsAtUID e2 ((x, t1):ctx) uid
+    -- return (t2, c2 ++ c1, uid)
+    return (t2, c2 ++ c1, uid)
 
 data UnifyError =
     Infinite MonoType MonoType
@@ -173,6 +187,14 @@ applySubstitution sub (TVar x) = fromMaybe (TVar x) $ lookup x sub
 applySubstitution sub (t1 :-> t2) = applySubstitution sub t1 :-> applySubstitution sub t2
 applySubstitution sub (TApp f ts) = TApp f $ applySubstitution sub <$> ts
 
+applySubstitutionPoly :: Substitution -> Type -> Type
+applySubstitutionPoly sub (Mono t) = Mono $ applySubstitution sub t
+applySubstitutionPoly sub (Forall x t) =
+    Forall x $ applySubstitutionPoly (filter (\(y,_) -> y /= x) sub) t
+
+applySubstitutionToCtx :: Substitution -> Context -> Context
+applySubstitutionToCtx subs = fmap (\(name, t) -> (name, applySubstitutionPoly subs t))
+
 vars :: MonoType -> [UID]
 vars t = nub $ go t where
     go (TVar x) = [x]
@@ -182,11 +204,36 @@ vars t = nub $ go t where
 generalize :: MonoType -> Type
 generalize t = foldr Forall (Mono t) $ vars t
 
+varsPoly :: Type -> [UID]
+varsPoly (Mono t) = vars t
+varsPoly (Forall x t) = delete x $ varsPoly t
+
+ctxVars :: Context -> [UID]
+ctxVars [] = []
+ctxVars ((_, t):ctx) = union (varsPoly t) (ctxVars ctx)
+
+generalizeInCtx :: MonoType -> Context -> Type
+generalizeInCtx t ctx = foldr Forall (Mono t) $ vars t \\ ctxVars ctx
+
 data TypeError =
     GCError GCError
     | UnifyError UnifyError deriving (Show)
 
 type InferResult r = Either TypeError r
+
+inferAtUID :: Expr -> Context -> UID -> InferResult (Type, UID)
+inferAtUID expr ctx uid = case genConstraintsAtUID expr ctx uid of
+    Right (t, c, uid) -> case unify c of
+        Right sub -> Right $ (generalize (applySubstitution sub t), uid)
+        Left err -> Left $ UnifyError $ err
+    Left err -> Left $ GCError $ err
+
+inferAtUIDRetConstraints :: Expr -> Context -> UID -> InferResult (Type, [Constraint], UID)
+inferAtUIDRetConstraints expr ctx uid = case genConstraintsAtUID expr ctx uid of
+    Right (t, c, uid) -> case unify c of
+        Right sub -> Right $ (generalizeInCtx (applySubstitution sub t) (applySubstitutionToCtx sub ctx), c, uid)
+        Left err -> Left $ UnifyError $ err
+    Left err -> Left $ GCError $ err
 
 -- | Infers the type of an expression given a set of typing assumptions.
 infer :: Expr -> Context -> InferResult Type
