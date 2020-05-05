@@ -1,0 +1,28 @@
+module := item*
+
+item := definition | typeDef
+
+definition := "def" ["."] ident ["(" paramList ")"] "=" block
+
+paramList := ident ":" type ["," paramList]
+
+block := expr0 [expr0]
+
+expr0 := letExpr | expr1
+
+expr1 := expr2 [(+ | -) expr2]
+
+expr2 := expr3 [(* | / | %) expr3]
+
+expr3 := matchExpr | forExpr | expr4 ["?"] ["(" args ")" ["?"]] ["." afterDot]
+
+afterDot := ident ["?"] ["(" args ")" ["?"]] ["." afterDot]
+
+expr4 := "self" | var | literal | "(" block ")"
+
+var := ident
+
+letExpr := "let" 
+
+
+3 + match a | 0: 1 | 2: 9 + 4

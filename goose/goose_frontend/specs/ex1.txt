@@ -1,0 +1,59 @@
+import HTTPServer._
+
+type Either<a,b> =
+|   Left(a)
+|   Right(b)
+
+// Option<t> === t?
+type Option<t> =
+|   Some(t) // === <x>
+|   None    // === x
+
+// Result<t,e> === t#e
+type Result<t, e> =
+|   Success(t)
+|   Failure(e)
+
+type Tree<t> = {
+    val: t
+    leftChild: Tree<t>?
+    rightChild: Tree<t>?
+}
+
+// square : <n> n -> n
+fn square(n) = {
+    n * n
+}
+
+// swapEither : <a,b> Either<a,b> -> Either<b,a>
+fn swapEither(x) = 
+|   Left(x) => Right(x)
+|   Right(x) => Left(x)
+
+// connectToServer : String -> Connection
+fn connectToServer(url) = {
+    let conn = HTTPServer.connect(url).try
+    println("Successfully connected to url: ${url}")
+    conn
+}
+
+// connectToServerAsync : String -> Async<Result<Connection>>
+// Async<Connection # HTTPError>
+fn connectToServerAsync(url) = {
+    let conn = HTTPServer.connect(url).^await.^try
+    println("Successfully connected to url: ${url}")
+    conn
+}
+
+fn connectToServerAsync(url) = {
+    HTTPServer.connect(url).then(tmp0 -> {
+        Async(tmp0.bind(tmp1 -> {
+            let conn = tmp1
+            println("Successfully connected to url: ${url}")
+            Success(conn)
+        }))
+    })
+    let conn = .^await.^try
+    println("Successfully connected to url: ${url}")
+    conn
+}

@@ -1,0 +1,83 @@
+def square(x) = x * x
+
+def fact(n) =
+    let acc = 1
+    for i in range(n):
+        acc *= i
+    acc
+
+def fib(n) = match n
+|   0 => 0
+|   1 => 1
+|   x => fib(x - 1) + fib(x - 2)
+
+def fib(n) = match n
+|   0 => 0
+|   1 => 1
+|   x =>
+        let a = 0
+        let b = 1
+        for _ in range(n-1): {
+            c = a + b
+            a = b
+            b = c
+        }
+
+def connectToServer(url) =
+    let conn = HTTPServer.connect(url).await?
+    println("Successfully connected to url: ${url}")
+    conn
+
+def connectToServer(url) =
+    HTTPServer.connect(url).then(tmp0 => match tmp0
+    |   <> => ret(<>)
+    |   <tmp1> =>
+            let conn = tmp1
+            println("Successfully connected to url: ${url}")
+            conn
+    )
+
+type Tree[T] =
+|   Node(val: T, left: Tree #T, right: Tree #T)
+|   Leaf
+
+type List[T] =
+|   Cons(head: T, tail: List #T)
+|   Empty
+
+type Tree2[T] = (val: T, left: Tree#T, right: Tree#T)?
+
+type DequeNode[T] = (val: T, prev: DequeNode[T]&weak, next: DequeNode[T]?)
+
+type Deque[T] = (first: DequeNode[T], last: DequeNode[T])?
+where: (
+    def new() = <>
+
+    def .pushFirst(x: T) = match self
+    |   <oldFirst, _> =>
+            self.first = DequeNode(x, <>, <oldFirst>)
+            oldFirst.prev = <self.first>
+    |   <> =>
+            let node = (x, <>, <>)
+            <first = node, last = node>
+
+    def .pushLast(x: T) = match self
+    |   <_, oldLast> => self.last = DequeNode(x, <oldLast>, <>)
+    |   <> =>
+            let node = (x, <>, <>)
+            <first = node, last = node>
+)
+
+def f(x,y) = match x
+|   0 => 3
+|   1 => match y (
+    |   9 => 2
+    |   _ => y
+    )
+|   _ => 2
+
+trait ToString[T]:
+    def .toString(x: T) -> String
+
+trait Add[T]:
+    def .plus(x) -> String
