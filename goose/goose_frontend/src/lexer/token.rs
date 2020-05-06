@@ -24,6 +24,7 @@ pub enum Token {
 
     Operator(String),
 
+    Pipeline,
     Pipe,
 
     Keyword(String),
@@ -39,19 +40,20 @@ pub fn init_patterns() -> Result<Vec<(Regex, fn(String) -> Token)>, regex::Error
         (Regex::new(r"^\)")?, |_| Token::CloseParen),
         (Regex::new(r"\[")?, |_| Token::OpenSquare),
         (Regex::new(r"^\]")?, |_| Token::CloseSquare),
-        (Regex::new(r"^<")?, |_| Token::OpenAngle),
-        (Regex::new(r"^>")?, |_| Token::CloseAngle),
         (Regex::new(r"^,")?, |_| Token::Comma),
         (Regex::new(r"^=>")?, |_| Token::DoubleArrow),
         (Regex::new(r"^->")?, |_| Token::SingleArrow),
         (Regex::new(r"^=")?, |_| Token::Equal),
         (Regex::new(r"^\.")?, |_| Token::Dot),
         (Regex::new(r"^(\+=|-=|\*=|/=)")?, Token::OpAssign),
-        (Regex::new(r"^(\+|-|\*|/|\?)")?, Token::Operator),
+        (Regex::new(r"^(\+|-|\*|/|\?|==|!=|>|<|<=|>=)")?, Token::Operator),
+        (Regex::new(r"^<")?, |_| Token::OpenAngle),
+        (Regex::new(r"^>")?, |_| Token::CloseAngle),
         (
-            Regex::new(r"^(def|let|match|if|in|for|trait|type|await)")?,
+            Regex::new(r"^(def|let|match|if|else|in|for|trait|type|await|while|true|false|intrinsic|_)")?,
             Token::Keyword,
         ),
+        (Regex::new(r"^\|>")?, |_| Token::Pipeline),
         (Regex::new(r"^\|")?, |_| Token::Pipe),
         (Regex::new(r"^([a-zA-Z][a-zA-Z0-9_]*)")?, Token::Identifier),
         (

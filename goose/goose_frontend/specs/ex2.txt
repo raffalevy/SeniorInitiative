@@ -1,76 +1,79 @@
 def square(x) = x * x
 
 def fact(n) =
-    let acc = 1
+    let acc = 1;
     for i in range(n):
-        acc *= i
+        acc *= i;
     acc
 
-def fib(n) = match n
+def fib(n) = match n:
 |   0 => 0
 |   1 => 1
 |   x => fib(x - 1) + fib(x - 2)
 
-def fib(n) = match n
+def fib(n) = match n:
 |   0 => 0
 |   1 => 1
 |   x =>
-        let a = 0
-        let b = 1
-        for _ in range(n-1): {
-            c = a + b
-            a = b
-            b = c
-        }
+        let a = 0;
+        let b = 1;
+        for _ in range(n-1): (
+            c = a + b;
+            a = b;
+            b = c;
+        )
+        b
 
 def connectToServer(url) =
-    let conn = HTTPServer.connect(url).await?
-    println("Successfully connected to url: ${url}")
+    let conn = HTTPServer.connect(url).await?;
+    println("Successfully connected to url: ${url}");
     conn
 
 def connectToServer(url) =
-    HTTPServer.connect(url).then(tmp0 => match tmp0
+    HTTPServer.connect(url).then(tmp0 -> match tmp0:
     |   <> => ret(<>)
     |   <tmp1> =>
-            let conn = tmp1
-            println("Successfully connected to url: ${url}")
+            let conn = tmp1;
+            println("Successfully connected to url: ${url}");
             conn
     )
 
 type Tree[T] =
-|   Node(val: T, left: Tree #T, right: Tree #T)
+|   Node{val: T, left: Tree[T], right: Tree[T] }
 |   Leaf
 
 type List[T] =
-|   Cons(head: T, tail: List #T)
+|   Cons{head: T, tail: List[T]}
 |   Empty
 
-type Tree2[T] = (val: T, left: Tree#T, right: Tree#T)?
+type Tree2[T] = {val: T, left: Tree[T], right: Tree[T]}?
 
-type DequeNode[T] = (val: T, prev: DequeNode[T]&weak, next: DequeNode[T]?)
+type DequeNode[T] = {val: T, prev: DequeNode[T]&weak, next: DequeNode[T]?}
 
-type Deque[T] = (first: DequeNode[T], last: DequeNode[T])?
+type Deque[T] = {first: DequeNode[T], last: DequeNode[T]}?
 where: (
     def new() = <>
 
-    def .pushFirst(x: T) = match self
+    def .pushFirst(x: T) = match self:
     |   <oldFirst, _> =>
-            self.first = DequeNode(x, <>, <oldFirst>)
+            self.first = DequeNode(x, <>, <oldFirst>);
             oldFirst.prev = <self.first>
     |   <> =>
-            let node = (x, <>, <>)
-            <first = node, last = node>
+            let node = DequeNode(x, <>, <>);
+            self.first = node
+            self.last = node
 
-    def .pushLast(x: T) = match self
+    def .pushLast(x: T) = match self:
     |   <_, oldLast> => self.last = DequeNode(x, <oldLast>, <>)
     |   <> =>
-            let node = (x, <>, <>)
-            <first = node, last = node>
+            let node = DequeNode(x, <>, <>);
+            self.first = node
+            self.last = node
 )
 
-def f(x,y) = match x
+def f(x,y) = match x:
 |   0 => 3
-|   1 => match y (
+|   1 => match y: (
     |   9 => 2
     |   _ => y
     )
@@ -79,5 +82,5 @@ def f(x,y) = match x
 trait ToString[T]:
     def .toString(x: T) -> String
 
-trait Add[T]:
-    def .plus(x) -> String
+trait Add[T, U]:
+    def .plus(x: U) -> String
