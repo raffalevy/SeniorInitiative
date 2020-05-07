@@ -31,6 +31,8 @@ pub enum Token {
     Identifier(String),
     FloatLiteral(f64),
     IntLiteral(u64),
+
+    StringLiteral(String)
 }
 
 pub fn init_patterns() -> Result<Vec<(Regex, fn(String) -> Token)>, regex::Error> {
@@ -46,11 +48,11 @@ pub fn init_patterns() -> Result<Vec<(Regex, fn(String) -> Token)>, regex::Error
         (Regex::new(r"^=")?, |_| Token::Equal),
         (Regex::new(r"^\.")?, |_| Token::Dot),
         (Regex::new(r"^(\+=|-=|\*=|/=)")?, Token::OpAssign),
-        (Regex::new(r"^(\+|-|\*|/|\?|==|!=|>|<|<=|>=)")?, Token::Operator),
+        (Regex::new(r"^(/\\|\+|-|\*|/|\?|==|!=|>|<|<=|>=)")?, Token::Operator),
         (Regex::new(r"^<")?, |_| Token::OpenAngle),
         (Regex::new(r"^>")?, |_| Token::CloseAngle),
         (
-            Regex::new(r"^(def|let|match|if|else|in|for|trait|type|await|while|true|false|intrinsic|_)")?,
+            Regex::new(r"^(def|let|match|if|else|in|forall|for|trait|type|await|while|true|false|where|intrinsic|mut|_)")?,
             Token::Keyword,
         ),
         (Regex::new(r"^\|>")?, |_| Token::Pipeline),
@@ -61,6 +63,7 @@ pub fn init_patterns() -> Result<Vec<(Regex, fn(String) -> Token)>, regex::Error
             parse_float_literal,
         ),
         (Regex::new(r"^[0-9]")?, parse_int_literal),
+        (Regex::new(r#""(?:\\"|[^"])*""#)?, Token::StringLiteral)
     ])
 }
 

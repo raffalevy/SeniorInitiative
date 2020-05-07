@@ -46,12 +46,12 @@ type List[T] =
 |   Cons{head: T, tail: List[T]}
 |   Empty
 
-type Tree2[T] = {val: T, left: Tree[T], right: Tree[T]}?
+type Tree2[T] {val: T, left: Tree[T], right: Tree[T]}?
 
-type DequeNode[T] = {val: T, prev: DequeNode[T]&weak, next: DequeNode[T]?}
+type DequeNode[T] {val: T, prev: DequeNode[T]&weak, next: DequeNode[T]?}
 
-type Deque[T] = {first: DequeNode[T], last: DequeNode[T]}?
-where: (
+type Deque[T] {first: DequeNode[T], last: DequeNode[T]}?
+where (
     def new() = <>
 
     def .pushFirst(x: T) = match self:
@@ -79,8 +79,43 @@ def f(x,y) = match x:
     )
 |   _ => 2
 
-trait ToString[T]:
+trait ToString[T]
     def .toString(x: T) -> String
 
-trait Add[T, U]:
+trait Add[T, U]
     def .plus(x: U) -> String
+
+trait Functor[F[_]]
+    def [F[A]].map(f: A -> B) -> F[B]
+
+trait Pure[F[_]]
+    def pure[T](x: T) -> F[T]
+
+trait Lift2[F[_]]
+    def lift2(a: F[A], b: F[B], f: (A, B) -> C) -> F[C]
+
+trait Applicative[F[_]] = Pure[F] + Lift2[F]
+
+trait Then[F[_]]
+    def [F[A]].then(f: A -> F[B]) -> F[B]
+
+trait Monad[F[_]] = Pure[F] + Then[F]
+
+instance Pure[Option]
+    def pure[T](x: T) -> T? = <x>
+
+instance Then[Option]
+    def [A?].then(f: A -> B?) -> B? = match self:
+    |   <> => <>
+    |   <x> => <f(x)>
+
+forall[F[_], Then[F]]
+instance Lift2[F]
+    def lift2(a: F[A], b: F[B], f: (A,B) -> C) -> F[C] =
+        a.then(x -> b.then(y -> f(x,y)))
+
+type Aaa =
+|   A{ aaa: Int, bbb: Int }@mut
+|   B
+
+type Expr =
